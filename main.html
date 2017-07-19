@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Terrain</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="d3.v4.js"></script>
+    <script type="text/javascript" src="priority-queue.js"></script>
+    <script type="text/javascript" src="language.js"></script>
+    <script type="text/javascript" src="citynames.js"></script>
+    <script type="text/javascript" src="terrain.js"></script>
+
+
+</head>
+
+<body>
+    <div id="panel">
+        <label for="res">Resolution:</label>
+        <input id="res" value="12" />
+
+        <label for="slope">Slope:</label>
+        <input id="slope" value="2" />
+
+        <label for="cone">Cone:</label>
+        <input id="cone" value="1" />
+
+        <label for="mountains">Mountains:</label>
+        <input id="mountains" value="100" />
+
+        <label for="ncities">Cities:</label>
+        <input id="ncities" value="15" />
+
+        <label for="nterrs">Territories:</label>
+        <input id="nterrs" value="4" />
+
+        <label for="erosion">Erosion:</label>
+        <input id="erosion" value="8" />
+
+        <label for="seaLevel">Sea Level:</label>
+        <input id="seaLevel" value="0.1" />
+
+
+        <div>
+            <label for="showNames">Names:</label>
+            <input type="checkbox" id="showNames" checked/>
+        </div>
+
+        <button id="rename" onclick="newNames()">New Names</button>
+        <button id="submit" onclick="makeMap()">New Map</button>
+        <button onclick="downloadPNG()">Download PNG</button>
+        <button onclick="download()">Download SVG</button>
+    </div>
+    <div>
+        <div id="main"></div>
+
+    </div>
+</body>
+<script>
+    function addSVG(div) {
+        let svg = div.insert("svg", ":first-child")
+            .attr("id", "htmlsvg")
+            .attr("height", 1000)
+            .attr("width", 1000)
+            .attr("viewBox", "-500 -500 10000 10000")
+            .attr("style", "float:right;background-color:#fff;");
+
+        document.getElementById("htmlsvg").innerHTML = "<defs>" +
+            "                <style type=\"text/css\"><![CDATA[" +
+            "                select, svg {" +
+            "                    background-color: white;" +
+            "                    border: solid 1px black;" +
+            "                    font-size: medium;" +
+            "                    margin-left: 0.5rem;" +
+            "                }" +
+            "" +
+            "                path, line {" +
+            "                    fill: none;" +
+            "                    stroke: black;" +
+            "                    stroke-linecap: round;" +
+            "                }" +
+            "" +
+            "                .field {" +
+            "                    stroke: none;" +
+            "                    fill-opacity: 1.0;" +
+            "                }" +
+            "" +
+            "                .slope {" +
+            "                    stroke-width: 1;" +
+            "                }" +
+            "" +
+            "                .river {" +
+            "                    stroke-width: 2;" +
+            "                }" +
+            "" +
+            "                .coast {" +
+            "                    stroke-width: 4;" +
+            "                }" +
+            "" +
+            "                .border {" +
+            "                    stroke-width: 5;" +
+            "                    stroke-dasharray: 4,4;" +
+            "                    stroke-linecap: butt;" +
+            "                }" +
+            "" +
+            "                text {" +
+            "                    font-family: \"Palatino Linotype\", \"Book Antiqua\", Palatino, serif;" +
+            "                    color: black;" +
+            "                    stroke: white;" +
+            "                    stroke-width: 5;" +
+            "                    stroke-linejoin: round;" +
+            "                    paint-order: stroke;" +
+            "                }" +
+            "" +
+            "                text.region {" +
+            "                    stroke-width:10;" +
+            "                    font-variant: small-caps;" +
+            "                }" +
+            "                ]]></style>" +
+            "              </defs>";
+
+        return svg;
+    }
+
+    var defaultParams = {
+        extent: {
+            width: 1,
+            height: 1
+        },
+        generator: generateCoast,
+        fontsizes: {
+            region: 40,
+            city: 25,
+            town: 15
+        },
+        terrain: {}
+    }
+
+    var svg = addSVG(d3.select("div#main"));
+
+
+    function newNames() {
+        drawLabels(svg, render);
+    }
+
+
+    function makeMap() {
+        defaultParams.npts = Math.pow(2, document.getElementById('res').value);
+        defaultParams.terrain.cone = document.getElementById('cone').value;
+        defaultParams.terrain.seaLevel = document.getElementById('seaLevel').value;
+        defaultParams.terrain.mountains = document.getElementById('mountains').value;
+        defaultParams.terrain.slope = document.getElementById('slope').value;
+        defaultParams.terrain.erosionIterations = document.getElementById('erosion').value;
+        defaultParams.ncities = document.getElementById('ncities').value;
+        defaultParams.nterrs = document.getElementById('nterrs').value;
+        defaultParams.showNames = document.getElementById('showNames').checked;
+
+        doMap(svg, defaultParams);
+    }
+    makeMap();
+
+    function downloadPNG() {
+
+        var svg = document.querySelector("svg");
+        var svgData = new XMLSerializer().serializeToString(svg);
+
+        var canvas = document.createElement("canvas");
+        var svgSize = svg.getBoundingClientRect();
+        canvas.width = svgSize.width*document.getElementById('res').value/4;
+        canvas.height = svgSize.height*document.getElementById('res').value/4;
+        var ctx = canvas.getContext("2d");
+
+        var img = document.createElement("img");
+        img.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
+
+        img.onload = function() {
+            ctx.drawImage(img, 0,0,canvas.width, canvas.height);
+
+            // Now is done
+            window.location.href = canvas.toDataURL("image/png");
+        };
+    }
+
+    function download() {
+        var e = document.createElement('script');
+        e.setAttribute('src', 'svg-crowbar.js');
+        e.setAttribute('class', 'svg-crowbar');
+        document.body.appendChild(e);
+    }
+</script>
+
+</html>

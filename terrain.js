@@ -334,7 +334,7 @@ function fillSinks(h, epsilon) {
 function getFlux(h) {
     var dh = downhill(h);
     var idxs = [];
-    var flux = zero(h.mesh); 
+    var flux = zero(h.mesh);
     for (var i = 0; i < h.length; i++) {
         idxs[i] = i;
         flux[i] = 1/h.length;
@@ -424,7 +424,7 @@ function cleanCoast(h, iters) {
                 if (h[nbs[j]] > 0) {
                     count++;
                 } else if (h[nbs[j]] > best) {
-                    best = h[nbs[j]];    
+                    best = h[nbs[j]];
                 }
             }
             if (count > 1) continue;
@@ -698,7 +698,7 @@ function visualizeVoronoi(svg, field, lo, hi) {
     tris.enter()
         .append('path')
         .classed('field', true);
-    
+
     tris.exit()
         .remove();
 
@@ -822,16 +822,16 @@ function dropEdge(h, p) {
 function generateCoast(params) {
     var mesh = generateGoodMesh(params.npts, params.extent);
     var h = add(
-            slope(mesh, randomVector(4)),
-            cone(mesh, runif(-1, -1)),
-            mountains(mesh, 50)
+            slope(mesh, randomVector(params.terrain.slope)),
+            cone(mesh, runif(-params.terrain.cone, -params.terrain.cone)),
+            mountains(mesh, params.terrain.mountains)
             );
     for (var i = 0; i < 10; i++) {
         h = relax(h);
     }
     h = peaky(h);
-    h = doErosion(h, runif(0, 0.1), 5);
-    h = setSeaLevel(h, runif(0.2, 0.6));
+    h = doErosion(h, runif(0, 0.1), params.terrain.erosionIterations);
+    h = setSeaLevel(h, params.terrain.seaLevel);
     h = fillSinks(h);
     h = cleanCoast(h, 3);
     return h;
@@ -858,7 +858,7 @@ function drawLabels(svg, render) {
     var cities = render.cities;
     var nterrs = render.params.nterrs;
     var avoids = [render.rivers, render.coasts, render.borders];
-    var lang = makeRandomLanguage();
+    //var lang = makeRandomLanguage();
     var citylabels = [];
     function penalty(label) {
         var pen = 0;
@@ -897,7 +897,7 @@ function drawLabels(svg, render) {
     for (var i = 0; i < cities.length; i++) {
         var x = h.mesh.vxs[cities[i]][0];
         var y = h.mesh.vxs[cities[i]][1];
-        var text = makeName(lang, 'city');
+        var text = getName();
         var size = i < nterrs ? params.fontsizes.city : params.fontsizes.town;
         var sx = 0.65 * size/1000 * text.length;
         var sy = size/1000;
@@ -961,7 +961,7 @@ function drawLabels(svg, render) {
     var reglabels = [];
     for (var i = 0; i < nterrs; i++) {
         var city = cities[i];
-        var text = makeName(lang, 'region');
+        var text = getName();
         var sy = params.fontsizes.region / 1000;
         var sx = 0.6 * text.length * sy;
         var lc = terrCenter(h, terr, city, true);
@@ -976,7 +976,7 @@ function drawLabels(svg, render) {
             if (terr[j] != city) score -= 3000;
             for (var k = 0; k < cities.length; k++) {
                 var u = h.mesh.vxs[cities[k]];
-                if (Math.abs(v[0] - u[0]) < sx && 
+                if (Math.abs(v[0] - u[0]) < sx &&
                     Math.abs(v[1] - sy/2 - u[1]) < sy) {
                     score -= k < nterrs ? 4000 : 500;
                 }
@@ -1007,10 +1007,10 @@ function drawLabels(svg, render) {
             }
         }
         reglabels.push({
-            text: text, 
-            x: h.mesh.vxs[best][0], 
-            y: h.mesh.vxs[best][1], 
-            size:sy, 
+            text: text,
+            x: h.mesh.vxs[best][0],
+            y: h.mesh.vxs[best][1],
+            size:sy,
             width:sx
         });
     }
@@ -1029,7 +1029,7 @@ function drawLabels(svg, render) {
         .raise();
 
 }
-function drawMap(svg, render) {
+function drawMap(svg, render, params) {
     render.rivers = getRivers(render.h, 0.01);
     render.coasts = contour(render.h, 0);
     render.terr = getTerritories(render);
@@ -1039,35 +1039,23 @@ function drawMap(svg, render) {
     drawPaths(svg, 'border', render.borders);
     visualizeSlopes(svg, render);
     visualizeCities(svg, render);
-    drawLabels(svg, render);
+    if(params.showNames){
+        drawLabels(svg, render);
+    }
 }
-
+var render = {};
 function doMap(svg, params) {
-    var render = {
+    render = {
         params: params
     };
     var width = svg.attr('width');
     svg.attr('height', width * params.extent.height / params.extent.width);
-    svg.attr('viewBox', -1000 * params.extent.width/2 + ' ' + 
-                        -1000 * params.extent.height/2 + ' ' + 
-                        1000 * params.extent.width + ' ' + 
+    svg.attr('viewBox', -1000 * params.extent.width/2 + ' ' +
+                        -1000 * params.extent.height/2 + ' ' +
+                        1000 * params.extent.width + ' ' +
                         1000 * params.extent.height);
     svg.selectAll().remove();
     render.h = params.generator(params);
     placeCities(render);
-    drawMap(svg, render);
+    drawMap(svg, render, params);
 }
-
-var defaultParams = {
-    extent: defaultExtent,
-    generator: generateCoast,
-    npts: 16384,
-    ncities: 15,
-    nterrs: 5,
-    fontsizes: {
-        region: 40,
-        city: 25,
-        town: 20
-    }
-}
-
