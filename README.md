@@ -8,6 +8,7 @@ This code depends on the following:
 
  * [D3.js][d3] (tested with version 4.2.0)
  * Adam Hooper's [js-priority-queue][priority]
+ * https://github.com/NYTimes/svg-crowbar
 
 
 [priority]: https://github.com/adamhooper/js-priority-queue
