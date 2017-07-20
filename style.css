@@ -48,3 +48,9 @@ button:hover {
     background-color: black;
     color: white;
 }
+
+#github{
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+}
