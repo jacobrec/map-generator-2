@@ -17,7 +17,7 @@
 <body>
     <div id="panel">
         <label for="res">Resolution:</label>
-        <input id="res" value="12" />
+        <input id="res" value="13" />
 
         <label for="slope">Slope:</label>
         <input id="slope" value="2" />
@@ -51,9 +51,10 @@
         <button onclick="downloadPNG()">Download PNG</button>
         <button onclick="download()">Download SVG</button>
     </div>
-    <div>
-        <div id="main"></div>
-
+    <div id="holder">
+        <div id="main" class="display"></div>
+        <div id="loading" class="display">
+            <h1>Generating...</h1></div>
     </div>
 </body>
 <script>
@@ -145,17 +146,30 @@
 
 
     function makeMap() {
-        defaultParams.npts = Math.pow(2, document.getElementById('res').value);
-        defaultParams.terrain.cone = document.getElementById('cone').value;
-        defaultParams.terrain.seaLevel = document.getElementById('seaLevel').value;
-        defaultParams.terrain.mountains = document.getElementById('mountains').value;
-        defaultParams.terrain.slope = document.getElementById('slope').value;
-        defaultParams.terrain.erosionIterations = document.getElementById('erosion').value;
-        defaultParams.ncities = document.getElementById('ncities').value;
-        defaultParams.nterrs = document.getElementById('nterrs').value;
-        defaultParams.showNames = document.getElementById('showNames').checked;
 
-        doMap(svg, defaultParams);
+        document.getElementById('main').style.display = "none";
+        document.getElementById('loading').style.display = "initial";
+        console.log("Start");
+
+        setTimeout(function() {
+
+            defaultParams.npts = Math.pow(2, document.getElementById('res').value);
+            defaultParams.terrain.cone = document.getElementById('cone').value;
+            defaultParams.terrain.seaLevel = document.getElementById('seaLevel').value;
+            defaultParams.terrain.mountains = document.getElementById('mountains').value;
+            defaultParams.terrain.slope = document.getElementById('slope').value;
+            defaultParams.terrain.erosionIterations = document.getElementById('erosion').value;
+            defaultParams.ncities = document.getElementById('ncities').value;
+            defaultParams.nterrs = document.getElementById('nterrs').value;
+            defaultParams.showNames = document.getElementById('showNames').checked;
+
+
+            doMap(svg, defaultParams);
+            console.log("end");
+            document.getElementById('main').style.display = "initial";
+            document.getElementById('loading').style.display = "none";
+
+        }, 0);
     }
     makeMap();
 
@@ -166,15 +180,15 @@
 
         var canvas = document.createElement("canvas");
         var svgSize = svg.getBoundingClientRect();
-        canvas.width = svgSize.width*document.getElementById('res').value/4;
-        canvas.height = svgSize.height*document.getElementById('res').value/4;
+        canvas.width = svgSize.width * document.getElementById('res').value / 4;
+        canvas.height = svgSize.height * document.getElementById('res').value / 4;
         var ctx = canvas.getContext("2d");
 
         var img = document.createElement("img");
         img.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
 
         img.onload = function() {
-            ctx.drawImage(img, 0,0,canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             // Now is done
             window.location.href = canvas.toDataURL("image/png");
